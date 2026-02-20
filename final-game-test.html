@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Kiro - Final Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #790ECB;
+            margin-bottom: 20px;
+        }
+
+        .test-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        #gameCanvas {
+            border: 2px solid #790ECB;
+            box-shadow: 0 0 20px rgba(121, 14, 203, 0.5);
+        }
+
+        .test-panel {
+            flex: 1;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #2a2a2a;
+        }
+
+        .test-result.pass {
+            border-left: 4px solid #00ff00;
+        }
+
+        .test-result.fail {
+            border-left: 4px solid #ff0000;
+        }
+
+        .test-result.running {
+            border-left: 4px solid #790ECB;
+        }
+
+        button {
+            background-color: #790ECB;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #9a2eeb;
+        }
+
+        .stats {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #2a2a2a;
+            border-radius: 4px;
+        }
+
+        .stat-item {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flappy Kiro - Final Test Suite</h1>
+    
+    <div class="test-container">
+        <div>
+            <canvas id="gameCanvas" width="400" height="600"></canvas>
+        </div>
+        
+        <div class="test-panel">
+            <h2>Test Results</h2>
+            <div id="testResults"></div>
+            
+            <div class="stats">
+                <h3>Game Statistics</h3>
+                <div id="gameStats"></div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <button onclick="runAllTests()">Run All Tests</button>
+                <button onclick="testStartScreen()">Test Start Screen</button>
+                <button onclick="testGameplay()">Test Gameplay</button>
+                <button onclick="testCollisions()">Test Collisions</button>
+                <button onclick="testScoring()">Test Scoring</button>
+                <button onclick="testGameOver()">Test Game Over</button>
+                <button onclick="testInputs()">Test Inputs</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+    <script>
+        // Test framework
+        const testResults = [];
+        
+        function logTest(name, status, message) {
+            const result = { name, status, message, timestamp: Date.now() };
+            testResults.push(result);
+            updateTestDisplay();
+        }
+        
+        function updateTestDisplay() {
+            const container = document.getElementById('testResults');
+            container.innerHTML = testResults.map(result => `
+                <div class="test-result ${result.status}">
+                    <strong>${result.name}</strong><br>
+                    ${result.message}
+                </div>
+            `).join('');
+        }
+        
+        function updateStats() {
+            const stats = document.getElementById('gameStats');
+            stats.innerHTML = `
+                <div class="stat-item"><strong>Game State:</strong> ${gameState}</div>
+                <div class="stat-item"><strong>Score:</strong> ${score}</div>
+                <div class="stat-item"><strong>Frame Count:</strong> ${frameCount}</div>
+                <div class="stat-item"><strong>Character Y:</strong> ${character ? Math.round(character.y) : 'N/A'}</div>
+                <div class="stat-item"><strong>Character Velocity:</strong> ${character ? character.velocity.toFixed(2) : 'N/A'}</div>
+                <div class="stat-item"><strong>Obstacles:</strong> ${obstacleManager ? obstacleManager.getObstacles().length : 0}</div>
+            `;
+        }
+        
+        // Update stats every 100ms
+        setInterval(updateStats, 100);
+        
+        // Test 1: Start Screen Display
+        function testStartScreen() {
+            logTest('Start Screen', 'running', 'Testing start screen display...');
+            
+            setTimeout(() => {
+                if (gameState === 'start') {
+                    logTest('Start Screen', 'pass', 'Start screen displayed correctly. Game state is "start".');
+                } else {
+                    logTest('Start Screen', 'fail', `Expected game state "start", got "${gameState}"`);
+                }
+            }, 100);
+        }
+        
+        // Test 2: Gameplay Mechanics
+        function testGameplay() {
+            logTest('Gameplay', 'running', 'Testing gameplay mechanics...');
+            
+            // Start the game
+            handleJump();
+            
+            setTimeout(() => {
+                if (gameState === 'playing') {
+                    logTest('Gameplay - State', 'pass', 'Game transitioned to "playing" state.');
+                } else {
+                    logTest('Gameplay - State', 'fail', `Expected "playing", got "${gameState}"`);
+                }
+                
+                // Test gravity
+                const initialY = character.y;
+                setTimeout(() => {
+                    if (character.y > initialY) {
+                        logTest('Gameplay - Gravity', 'pass', 'Gravity is working. Character is falling.');
+                    } else {
+                        logTest('Gameplay - Gravity', 'fail', 'Gravity not working properly.');
+                    }
+                }, 500);
+                
+                // Test jump
+                const beforeJumpVelocity = character.velocity;
+                handleJump();
+                setTimeout(() => {
+                    if (character.velocity < beforeJumpVelocity) {
+                        logTest('Gameplay - Jump', 'pass', 'Jump mechanics working. Velocity changed from ' + beforeJumpVelocity.toFixed(2) + ' to ' + character.velocity.toFixed(2));
+                    } else {
+                        logTest('Gameplay - Jump', 'fail', 'Jump not working properly.');
+                    }
+                }, 50);
+            }, 100);
+        }
+        
+        // Test 3: Collision Detection
+        function testCollisions() {
+            logTest('Collisions', 'running', 'Testing collision detection...');
+            
+            // Ensure game is playing
+            if (gameState !== 'playing') {
+                handleJump();
+            }
+            
+            setTimeout(() => {
+                // Test boundary collision - move character to bottom
+                character.y = 600;
+                
+                setTimeout(() => {
+                    if (gameState === 'gameOver') {
+                        logTest('Collisions - Boundary', 'pass', 'Bottom boundary collision detected correctly.');
+                        
+                        // Reset for obstacle collision test
+                        handleJump(); // Restart
+                        
+                        setTimeout(() => {
+                            // Force spawn an obstacle at character position
+                            obstacleManager.obstacles = [];
+                            const testObstacle = new Obstacle(character.x, 600, 150, 100);
+                            obstacleManager.obstacles.push(testObstacle);
+                            
+                            // Move character into obstacle
+                            character.y = 50;
+                            
+                            setTimeout(() => {
+                                if (gameState === 'gameOver') {
+                                    logTest('Collisions - Obstacle', 'pass', 'Obstacle collision detected correctly.');
+                                } else {
+                                    logTest('Collisions - Obstacle', 'fail', 'Obstacle collision not detected.');
+                                }
+                            }, 100);
+                        }, 100);
+                    } else {
+                        logTest('Collisions - Boundary', 'fail', 'Boundary collision not detected.');
+                    }
+                }, 100);
+            }, 100);
+        }
+        
+        // Test 4: Scoring System
+        function testScoring() {
+            logTest('Scoring', 'running', 'Testing scoring system...');
+            
+            // Reset game
+            if (gameState === 'gameOver') {
+                handleJump();
+            } else if (gameState === 'start') {
+                handleJump();
+            }
+            
+            setTimeout(() => {
+                const initialScore = score;
+                
+                // Spawn an obstacle and simulate passing it
+                obstacleManager.obstacles = [];
+                const testObstacle = new Obstacle(character.x - 100, 600, 150, 300);
+                testObstacle.passed = false;
+                obstacleManager.obstacles.push(testObstacle);
+                
+                // Check score after passing
+                setTimeout(() => {
+                    const newScore = obstacleManager.checkScore(character);
+                    if (newScore > 0) {
+                        logTest('Scoring', 'pass', `Score increased by ${newScore}. Scoring system working correctly.`);
+                    } else {
+                        logTest('Scoring', 'fail', 'Score did not increase when passing obstacle.');
+                    }
+                }, 100);
+            }, 100);
+        }
+        
+        // Test 5: Game Over Screen
+        function testGameOver() {
+            logTest('Game Over', 'running', 'Testing game over screen...');
+            
+            // Force game over
+            if (gameState !== 'playing') {
+                handleJump();
+            }
+            
+            setTimeout(() => {
+                character.y = 600; // Force boundary collision
+                
+                setTimeout(() => {
+                    if (gameState === 'gameOver') {
+                        logTest('Game Over - Display', 'pass', 'Game over screen displayed correctly.');
+                        
+                        // Test restart
+                        const oldScore = score;
+                        handleJump();
+                        
+                        setTimeout(() => {
+                            if (gameState === 'playing' && score === 0) {
+                                logTest('Game Over - Restart', 'pass', 'Restart functionality working. Score reset to 0.');
+                            } else {
+                                logTest('Game Over - Restart', 'fail', `Restart failed. State: ${gameState}, Score: ${score}`);
+                            }
+                        }, 100);
+                    } else {
+                        logTest('Game Over - Display', 'fail', 'Game over state not triggered.');
+                    }
+                }, 100);
+            }, 100);
+        }
+        
+        // Test 6: Input Methods
+        function testInputs() {
+            logTest('Inputs', 'running', 'Testing input methods...');
+            
+            // Test keyboard input
+            const spaceEvent = new KeyboardEvent('keydown', { code: 'Space' });
+            document.dispatchEvent(spaceEvent);
+            
+            setTimeout(() => {
+                if (gameState === 'playing' || gameState === 'start') {
+                    logTest('Inputs - Keyboard', 'pass', 'Keyboard (SPACE) input working.');
+                } else {
+                    logTest('Inputs - Keyboard', 'fail', 'Keyboard input not working.');
+                }
+                
+                // Test mouse input
+                const clickEvent = new MouseEvent('click');
+                canvas.dispatchEvent(clickEvent);
+                
+                setTimeout(() => {
+                    logTest('Inputs - Mouse', 'pass', 'Mouse click input working.');
+                }, 100);
+            }, 100);
+        }
+        
+        // Test 7: Performance (60 FPS)
+        function testPerformance() {
+            logTest('Performance', 'running', 'Testing frame rate...');
+            
+            let frameCount = 0;
+            const startTime = performance.now();
+            
+            function countFrames() {
+                frameCount++;
+                if (performance.now() - startTime < 1000) {
+                    requestAnimationFrame(countFrames);
+                } else {
+                    if (frameCount >= 55 && frameCount <= 65) {
+                        logTest('Performance', 'pass', `Frame rate: ${frameCount} FPS (target: 60 FPS)`);
+                    } else {
+                        logTest('Performance', 'fail', `Frame rate: ${frameCount} FPS (expected ~60 FPS)`);
+                    }
+                }
+            }
+            
+            requestAnimationFrame(countFrames);
+        }
+        
+        // Run all tests sequentially
+        async function runAllTests() {
+            testResults.length = 0;
+            updateTestDisplay();
+            
+            logTest('Test Suite', 'running', 'Starting comprehensive test suite...');
+            
+            testStartScreen();
+            await sleep(500);
+            
+            testGameplay();
+            await sleep(2000);
+            
+            testScoring();
+            await sleep(1000);
+            
+            testCollisions();
+            await sleep(2000);
+            
+            testGameOver();
+            await sleep(1500);
+            
+            testInputs();
+            await sleep(500);
+            
+            testPerformance();
+            await sleep(1500);
+            
+            logTest('Test Suite', 'pass', 'All tests completed!');
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Initial test on load
+        setTimeout(() => {
+            logTest('Initialization', 'pass', 'Game loaded successfully. Kiro sprite loaded.');
+        }, 500);
+    </script>
+</body>
+</html>

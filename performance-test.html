@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Kiro - Performance Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #000000;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        #gameCanvas {
+            border: 2px solid #790ECB;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        #stats {
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #790ECB;
+            width: 400px;
+            margin-top: 20px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #2a2a2a;
+            border-radius: 4px;
+        }
+        
+        .stat-label {
+            color: #cccccc;
+        }
+        
+        .stat-value {
+            color: #790ECB;
+            font-weight: bold;
+        }
+        
+        .good {
+            color: #00ff00;
+        }
+        
+        .warning {
+            color: #ffaa00;
+        }
+        
+        .bad {
+            color: #ff0000;
+        }
+        
+        h1 {
+            color: #790ECB;
+        }
+        
+        h2 {
+            color: #ffffff;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Flappy Kiro - Performance Test</h1>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    
+    <div id="stats">
+        <h2>Performance Metrics</h2>
+        <div class="stat-row">
+            <span class="stat-label">Current FPS:</span>
+            <span class="stat-value" id="currentFps">--</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Average FPS:</span>
+            <span class="stat-value" id="avgFps">--</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Min FPS:</span>
+            <span class="stat-value" id="minFps">--</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Frame Time (ms):</span>
+            <span class="stat-value" id="frameTime">--</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Frames Rendered:</span>
+            <span class="stat-value" id="frameCount">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Performance Status:</span>
+            <span class="stat-value" id="status">Measuring...</span>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+    <script>
+        // Performance monitoring
+        let lastTime = performance.now();
+        let frameCount = 0;
+        let fpsHistory = [];
+        let minFps = Infinity;
+        
+        function updatePerformanceStats() {
+            const currentTime = performance.now();
+            const deltaTime = currentTime - lastTime;
+            const currentFps = 1000 / deltaTime;
+            
+            frameCount++;
+            fpsHistory.push(currentFps);
+            
+            // Keep only last 60 frames for average
+            if (fpsHistory.length > 60) {
+                fpsHistory.shift();
+            }
+            
+            // Calculate average FPS
+            const avgFps = fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length;
+            
+            // Track minimum FPS
+            if (currentFps < minFps) {
+                minFps = currentFps;
+            }
+            
+            // Update UI
+            document.getElementById('currentFps').textContent = currentFps.toFixed(1);
+            document.getElementById('avgFps').textContent = avgFps.toFixed(1);
+            document.getElementById('minFps').textContent = minFps.toFixed(1);
+            document.getElementById('frameTime').textContent = deltaTime.toFixed(2);
+            document.getElementById('frameCount').textContent = frameCount;
+            
+            // Determine performance status
+            const statusElement = document.getElementById('status');
+            if (avgFps >= 58) {
+                statusElement.textContent = '✓ Excellent (60 FPS target met)';
+                statusElement.className = 'stat-value good';
+            } else if (avgFps >= 50) {
+                statusElement.textContent = '⚠ Good (minor drops)';
+                statusElement.className = 'stat-value warning';
+            } else {
+                statusElement.textContent = '✗ Poor (below target)';
+                statusElement.className = 'stat-value bad';
+            }
+            
+            lastTime = currentTime;
+            requestAnimationFrame(updatePerformanceStats);
+        }
+        
+        // Start monitoring after a short delay to let the game initialize
+        setTimeout(() => {
+            requestAnimationFrame(updatePerformanceStats);
+        }, 1000);
+    </script>
+</body>
+</html>
