@@ -184,7 +184,7 @@ MIT License - Feel free to use this project for learning and fun!
 
 <div align="center">
 
-![Kiro Logo](https://kiro.dev/kiro-logo.png)
+![Kiro Logo](kiro-dev.png)
 
 ### **This entire game was built using [Kiro](https://kiro.dev)** 🤖✨
 
